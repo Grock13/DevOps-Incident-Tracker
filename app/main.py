@@ -1,5 +1,14 @@
+import logging
+
 from fastapi import FastAPI
 from pydantic import BaseModel
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s"
+)
+
+logger = logging.getLogger("incident-api")
 
 app = FastAPI(title="DevOps Incident API")
 
@@ -35,5 +44,13 @@ def create_incident(incident: Incident):
         "id": len(incidents) + 1,
         **incident.model_dump()
     }
+
     incidents.append(record)
+
+    logger.info(
+        "Incident created: service=%s status=%s",
+        incident.service,
+        incident.status
+    )
+
     return record

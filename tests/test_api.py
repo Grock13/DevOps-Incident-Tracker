@@ -1,29 +1,41 @@
 from fastapi.testclient import TestClient
 from app.main import app
 
-client = TestClient(app)
 
 def test_health():
-    response = client.get("/health")
+    with TestClient(app) as client:
+        response = client.get("/health")
 
-    assert response.status_code == 200
-    assert response.json() == {"status": "healthy"}
+        assert response.status_code == 200
+        assert response.json()["database"] == "connected"
+
 
 def test_get_incidents():
-    response = client.get("/incidents")
+    with TestClient(app) as client:
+        response = client.get("/incidents")
 
-    assert response.status_code == 200
-    assert isinstance(response.json(), list)
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
 
 def test_create_incident():
-    response = client.post(
-        "/incidents",
-        json={
-            "service": "EC2",
-            "status": "open",
-            "summary": "SSH timeout"
-        }
-    )
+    with TestClient(app) as client:
+        response = client.post(
+            "/incidents",
+            json={
+                "service": "Docker",
+                "status": "open",
+                "summary": "Database integration test"
+            }
+        )
 
-    assert response.status_code == 201
-    assert response.json()["service"] == "EC2"
+        assert response.status_code == 201
+
+        incident_id = response.json()["id"]
+
+        incidents = client.get("/incidents").json()
+
+        assert any(
+            item["id"] == incident_id
+            for item in incidents
+        )

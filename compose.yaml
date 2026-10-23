@@ -9,6 +9,12 @@ services:
     env_file:
       - .env
 
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+
+    secrets:
+      - db_password
+
     volumes:
       - incident_pgdata:/var/lib/postgresql/data
 
@@ -27,11 +33,17 @@ services:
     build:
       context: .
 
-    image: incident-api:day4
+    image: incident-api:day5
     restart: unless-stopped
 
     env_file:
       - .env
+
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+
+    secrets:
+      - db_password
 
     ports:
       - "127.0.0.1:8000:8000"
@@ -42,6 +54,26 @@ services:
 
     networks:
       - incident-net
+
+    # Security hardening
+    read_only: true
+
+    tmpfs:
+      - /tmp:rw,nosuid,size=32m
+
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Resource limits
+    mem_limit: 256m
+    cpus: 0.75
+
+secrets:
+  db_password:
+    file: ./secrets/db_password
 
 networks:
   incident-net:

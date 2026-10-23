@@ -1,5 +1,12 @@
 .git
-.venv
-__pycache__
-*.pyc
 .env
+.env.*
+!.env.example
+secrets/
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+*.log
+tests/
+docs/

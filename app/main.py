@@ -1,6 +1,7 @@
 import os
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager 
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -18,7 +19,9 @@ logger = logging.getLogger("incident-api")
 db_url = URL.create(
     "postgresql+psycopg",
     username=os.environ["POSTGRES_USER"],
-    password=os.environ["POSTGRES_PASSWORD"],
+    password=Path(
+    os.environ["POSTGRES_PASSWORD_FILE"]
+).read_text(encoding="utf-8").rstrip("\n"),
     host=os.getenv("DB_HOST", "incident-db"),
     port=int(os.getenv("DB_PORT", "5432")),
     database=os.environ["POSTGRES_DB"]

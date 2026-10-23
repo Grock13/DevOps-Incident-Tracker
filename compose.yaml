@@ -1,0 +1,52 @@
+name: incident-stack
+
+services:
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    volumes:
+      - incident_pgdata:/var/lib/postgresql/data
+
+    networks:
+      - incident-net
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+
+    image: incident-api:day4
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    networks:
+      - incident-net
+
+networks:
+  incident-net:
+    external: true
+
+volumes:
+  incident_pgdata:
+    external: true

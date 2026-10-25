@@ -44,5 +44,4 @@ jobs:
 
       - name: Finish
         run: echo "CI checks passed!"
-      - name: Simulate a failed check
-        run: exit 1
+     

@@ -1,0 +1,46 @@
+name: Incident API - CI Basics
+
+on:
+  push:
+    branches: [main]
+
+  pull_request:
+    branches: [main]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  basic-checks:
+    name: Validate Python and Bash
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Download repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Show Python version
+        run: python --version
+
+      - name: Check Python syntax
+        run: python -m py_compile app/main.py
+
+      - name: Check Bash syntax
+        run: bash -n scripts/smoke-test.sh
+
+      - name: Verify essential project files
+        run: |
+          test -f Dockerfile
+          test -f compose.yaml
+          test -f requirements.txt
+          echo "All required files exist."
+
+      - name: Finish
+        run: echo "CI checks passed!"

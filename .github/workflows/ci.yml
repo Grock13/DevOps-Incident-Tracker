@@ -1,4 +1,4 @@
-name: Incident API - CI Basics
+name: Incident API - CI Pipeline
 
 on:
   push:
@@ -13,12 +13,13 @@ permissions:
   contents: read
 
 jobs:
+
   basic-checks:
-    name: Validate Python and Bash
+    name: Python and Bash validation
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Download repository
+      - name: Checkout repository
         uses: actions/checkout@v7
 
       - name: Set up Python
@@ -26,22 +27,73 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Show Python version
-        run: python --version
-
       - name: Check Python syntax
         run: python -m py_compile app/main.py
 
       - name: Check Bash syntax
         run: bash -n scripts/smoke-test.sh
 
-      - name: Verify essential project files
+      - name: Verify essential files
         run: |
           test -f Dockerfile
           test -f compose.yaml
           test -f requirements.txt
-          echo "All required files exist."
+          test -f requirements-dev.txt
+          echo "Required files present."
 
-      - name: Finish
-        run: echo "CI checks passed!"
-     
+  integration-tests:
+    name: PostgreSQL integration tests
+    runs-on: ubuntu-24.04
+    needs: basic-checks
+
+    env:
+      POSTGRES_USER: incident_user
+      POSTGRES_DB: incidents_ci
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+
+        env:
+          POSTGRES_USER: incident_user
+          POSTGRES_PASSWORD: ci-only-integration-password
+          POSTGRES_DB: incidents_ci
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd "pg_isready -U incident_user -d incidents_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            -r requirements.txt \
+            -r requirements-dev.txt
+
+      - name: Create temporary CI password file
+        run: |
+          umask 077
+          printf '%s' 'ci-only-integration-password' \
+            > "$RUNNER_TEMP/incident-ci-password"
+
+          echo "POSTGRES_PASSWORD_FILE=$RUNNER_TEMP/incident-ci-password" \
+            >> "$GITHUB_ENV"
+
+      - name: Run integration tests
+        run: python -m pytest -q

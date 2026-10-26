@@ -82,7 +82,7 @@ def health():
             connection.execute(text("SELECT 1"))
 
         return {
-            "status": "healthy",
+            "status": "degraded",
             "database": "connected"
         }
 

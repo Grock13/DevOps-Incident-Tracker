@@ -97,3 +97,59 @@ jobs:
 
       - name: Run integration tests
         run: python -m pytest -q
+
+  docker-build:
+    name: Build and verify Docker image
+    runs-on: ubuntu-24.04
+
+    needs: integration-tests
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: incident-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Inspect Docker image
+        run: |
+          docker image ls incident-api
+          docker image inspect incident-api:ci \
+            --format 'Image size: {{.Size}} bytes'
+          docker image inspect incident-api:ci \
+            --format 'Container user: {{.Config.User}}'
+
+      - name: Verify non-root configuration
+        run: |
+          test "$(docker image inspect \
+            -f '{{.Config.User}}' incident-api:ci)" = "appuser"
+
+          echo "PASS: Application configured as non-root"
+
+      - name: Verify Python dependencies
+        run: |
+          docker run --rm \
+            --entrypoint python \
+            incident-api:ci \
+            -c "import fastapi, sqlalchemy, psycopg; print('Dependencies installed successfully')"
+
+      - name: Verify application files
+        run: |
+          docker run --rm \
+            --entrypoint python \
+            incident-api:ci \
+            -c "from pathlib import Path; assert Path('/app/app/main.py').is_file(); print('Application file found')"

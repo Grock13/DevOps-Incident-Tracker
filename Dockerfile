@@ -18,7 +18,7 @@ RUN groupadd --gid 10001 appuser && \
     --create-home appuser
 
 # Copy application files
-COPY --chown=appuser:appuser missing-app-folder/ ./app/
+COPY --chown=appuser:appuser app/ ./app/
 
 USER appuser
 

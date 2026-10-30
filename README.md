@@ -1,17 +1,18 @@
-project now uses PostgreSQL, a Docker bridge network, a named volume, and database-backed API endpoints.
-docker ps
-docker network inspect incident-net
-docker volume ls
-docker logs incident-api
-how to start your application with Docker Compose.
-docker compose up -d --build
-docker compose ps
-docker compose logs --tail 20
-docker compose down
+## CI/CD Pipeline — GitHub Actions
 
+The project uses GitHub Actions to automatically validate, test, and build the application when code is pushed to GitHub or submitted through a pull request.
 
-A hands-on DevOps portfolio project demonstrating how to build, containerize, secure, deploy, and troubleshoot a Python FastAPI application connected to PostgreSQL.
+### Pipeline stages
 
-The application uses Docker Compose for multi-container orchestration, persistent Docker volumes for database storage, health checks for service monitoring, and Docker Compose secrets for database credentials.
+1. **Source validation:** Checks Python and Bash syntax.
+2. **Integration testing:** Runs automated pytest tests against a temporary PostgreSQL database.
+3. **Docker build:** Builds the FastAPI application image using Docker Buildx.
+4. **Image verification:** Confirms that the image includes the required dependencies and application files and is configured to run as a non-root user.
 
-The complete stack was deployed on AWS EC2 and accessed securely through an SSH tunnel. The project includes automated API tests, smoke tests, and simulated incident-response exercises.
+### Build caching
+
+The pipeline uses GitHub Actions caching to reuse unchanged Docker build layers and reduce repeated build work.
+
+### Troubleshooting
+
+The project includes simulated CI failures involving application behavior and Dockerfile configuration, with successful recovery verified through subsequent pipeline runs.
